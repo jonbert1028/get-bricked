@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -44,57 +44,6 @@ th,td { padding:14px; text-align:left; border-bottom:1px solid var(--border); }
 <div class="tab tab-active" onclick="setMode('text')">⌨️ Text</div>
 <div class="tab" onclick="setMode('camera')">📷 Scan Barcode</div>
 <div class="tab" onclick="setMode('upload')">🖼️ Upload Photo</div>
+</div>
 <div id="text-search" class="search">
-<input id="query" placeholder="Set ID like 75192" value="75192">
-<select id="type"><option value="set">LEGO Set</option><option value="part">LEGO Piece</option><option value="minifigure">Minifigure</option></select>
-<button onclick="fetchPrices()">Scan Prices</button>
-</div>
-<div id="camera-search" style="display:none;">
-<video id="video"></video>
-<button onclick="startBarcode()" style="width:100%;margin-top:12px;">Start Camera</button>
-</div>
-<div id="upload-search" style="display:none;">
-<input type="file" id="imageInput" accept="image/*" style="display:none;" onchange="handleUpload(event)">
-<button onclick="document.getElementById('imageInput').click()" style="width:100%;">Choose Photo</button>
-<img id="preview" />
-<button id="analyzeBtn" onclick="analyzeImage()" style="width:100%;margin-top:12px;display:none;">Identify LEGO</button>
-</div>
-<div id="results"></div>
-</div>
-<script>
-const API_URL = 'https://get-bricked-api.onrender.com';
-let codeReader = null;
-function setMode(m){
-document.querySelectorAll('.tab').forEach(t=>t.classList.remove('tab-active'));
-event.target.classList.add('tab-active');
-document.getElementById('text-search').style.display=m==='text'?'flex':'none';
-document.getElementById('camera-search').style.display=m==='camera'?'block':'none';
-document.getElementById('upload-search').style.display=m==='upload'?'block':'none';
-if(m!=='camera'&&codeReader){codeReader.reset();codeReader=null;document.getElementById('video').style.display='none';}
-}
-async function startBarcode(){
-codeReader=new ZXing.BrowserBarcodeReader();
-const video=document.getElementById('video');video.style.display='block';
-try{const r=await codeReader.decodeOnceFromVideoDevice(undefined,'video');
-document.getElementById('query').value=r.text;document.getElementById('type').value='set';
-setMode('text');document.querySelector('.tab').click();fetchPrices();codeReader.reset();
-}catch(e){alert('Camera error: '+e);}
-}
-function handleUpload(e){
-const f=e.target.files[0];if(!f)return;
-const r=new FileReader();r.onload=e=>{document.getElementById('preview').src=e.target.result;
-document.getElementById('preview').style.display='block';document.getElementById('analyzeBtn').style.display='block';};
-r.readAsDataURL(f);
-}
-async function analyzeImage(){
-const f=document.getElementById('imageInput').files[0];if(!f)return;
-const fd=new FormData();fd.append('image',f);
-document.getElementById('analyzeBtn').textContent='Analyzing...';
-try{const res=await fetch(`${API_URL}/api/identify`,{method:'POST',body:fd});const d=await res.json(); document.getElementById('query').value=d.id;document.getElementById('type').value=d.type; setMode('text');document.querySelector('.tab').click();fetchPrices(); }catch(e){alert('Error: '+e.message);} document.getElementById('analyzeBtn').textContent='Identify LEGO'; } 
-async function fetchPrices(){ const q=document.getElementById('query').value,t=document.getElementById('type').value; if(!q)return;try{const res=await fetch(`${API_URL}/api/price?query=${q}&type=${t}`);const d=await res.json();
-document.getElementById('results').innerHTML=`<div class="card"><h2>${d.name}</h2><p>ID: ${d.query} | Type: ${d.type}</p></div><div class="card"><canvas id="chart"></canvas></div>`; new Chart(document.getElementById('chart'),{type:'bar',data:{labels:d.sites.filter(s=>s.avg_sold).map(s=>`${s.site} ${s.condition}`),datasets:[{data:d.sites.filter(s=>s.avg_sold).map(s=>s.avg_sold),backgroundColor:'#ffd500'}]},options:{plugins:{legend:{display:false}}}});
-}catch(e){alert('Error: '+e.message);}
-}
-</script>
-</body>
-</html>
+<input id="query" placeholder
