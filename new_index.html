@@ -86,7 +86,7 @@ const f=e.target.files[0];if(!f)return;
 const r=new FileReader();r.onload=e=>{document.getElementById('preview').src=e.target.result;
 document.getElementById('preview').style.display='block';document.getElementById('analyzeBtn').style.display='block';};
 r.readAsDataURL(f);
-}
+}const API_URL = 'https://get-bricked-api.onrender.com';
 async function analyzeImage(){
 const f=document.getElementById('imageInput').files[0];if(!f)return;
 const fd=new FormData();fd.append('image',f);
