@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GET BRICKED Price Scanner</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/@zxing/library@latest"></script>
+<style>
+:root { --bg:#0f1115; --card:#171a21; --text:#e8eaf0; --accent:#ffd500; --border:#262b36; }
+• { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:-apple-system,BlinkMacSystemFont,sans-serif; background:var(--bg); color:var(--text); padding:24px; }
+.container { max-width:1200px; margin:0 auto; }
+.logo { display:flex; align-items:center; gap:12px; margin-bottom:24px; flex-wrap:wrap; }
+.lego-title { font-weight:900; font-size:32px; }
+.lego-title span { text-shadow: 0 0 2px #fff, 0 0 4px #fff, 1px 1px 0 #000; }
+.tabs { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+.tab { padding:12px 20px; background:#171a21; border:1px solid var(--border); border-radius:10px; cursor:pointer; font-weight:600; }
+.tab-active { background:#ffd500; color:#000; border-color:#ffd500; }
+.search { display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+input,select,button { padding:14px 18px; border:1px solid var(--border); background:var(--card); color:var(--text); border-radius:10px; font-size:16px; }
+input { flex:1; min-width:200px; }
+button { background:var(--accent); color:#000; font-weight:700; cursor:pointer; border:none; }
+.card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:24px; margin-bottom:24px; }
+#video,#preview { width:100%; max-width:500px; border-radius:8px; margin-top:12px; display:none; }
+table { width:100%; border-collapse:collapse; }
+th,td { padding:14px; text-align:left; border-bottom:1px solid var(--border); }
+.price { font-weight:700; color:#3fb950; }
+</style>
+</head>
+<body>
+<div class="container">
+<div class="logo">
+<svg width="28" height="28" viewBox="0 0 24 24"><rect width="24" height="24" rx="2" fill="#D01012"/><circle cx="8" cy="8" r="3" fill="#E81E20"/><circle cx="16" cy="8" r="3" fill="#E81E20"/></svg>
+<svg width="28" height="28" viewBox="0 0 24 24"><rect width="24" height="24" rx="2" fill="#FFD500"/><circle cx="8" cy="8" r="3" fill="#FFE666"/><circle cx="16" cy="8" r="3" fill="#FFE666"/></svg>
+<svg width="28" height="28" viewBox="0 0 24 24"><rect width="24" height="24" rx="2" fill="#0055BF"/><circle cx="8" cy="8" r="3" fill="#1E70DF"/><circle cx="16" cy="8" r="3" fill="#1E70DF"/></svg>
+<h1 class="lego-title">
+<span style="color:#D01012">G</span><span style="color:#FFD500">E</span><span style="color:#0055BF">T</span>
+<span style="color:#009447">B</span><span style="color:#FE8A18">R</span><span style="color:#A06EB9">I</span><span style="color:#D01012">C</span><span style="color:#FFD500">K</span><span style="color:#0055BF">E</span><span style="color:#009447">D</span>
+<span style="color:#e8eaf0"> Price Scanner</span>
+</h1>
+</div>
+<div class="tabs">
+<div class="tab tab-active" onclick="setMode('text')">⌨️ Text</div>
+<div class="tab" onclick="setMode('camera')">📷 Scan Barcode</div>
+<div class="tab" onclick="setMode('upload')">🖼️ Upload Photo</div>
+</div>
+<div id="text-search" class="search">
+<input id="query" placeholder="Set ID like 75192" value="75192">
+<select id="type"><option value="set">LEGO Set</option><option value="part">LEGO Piece</option><option value="minifigure">Minifigure</option></select>
+<button onclick="fetchPrices()">Scan Prices</button>
+</div>
+<div id="camera-search" style="display:none;">
+<video id="video"></video>
+<button onclick="startBarcode()" style="width:100%;margin-top:12px;">Start Camera</button>
+</div>
+<div id="upload-search" style="display:none;">
+<input type="file" id="imageInput" accept="image/*" style="display:none;" onchange="handleUpload(event)">
+<button onclick="document.getElementById('imageInput').click()" style="width:100%;">Choose Photo</button>
+<img id="preview" />
+<button id="analyzeBtn" onclick="analyzeImage()" style="width:100%;margin-top:12px;display:none;">Identify LEGO</button>
+</div>
+<div id="results"></div>
+</div>
+<script>
+const API_URL = 'https://get-bricked-api.onrender.com';
+let codeReader = null;
+function setMode(m){
+document.querySelectorAll('.tab').forEach(t=>t.classList.remove('tab-active'));
+event.target.classList.add('tab-active');
+document.getElementById('text-search').style.display=m==='text'?'flex':'none';
+document.getElementById('camera-search').style.display=m==='camera'?'block':'none';
+document.getElementById('upload-search').style.display=m==='upload'?'block':'none';
+if(m!=='camera'&&codeReader){codeReader.reset();codeReader=null;document.getElementById('video').style.display='none';}
+}
+async function startBarcode(){
+codeReader=new ZXing.BrowserBarcodeReader();
+const video=document.getElementById('video');video.style.display='block';
+try{const r=await codeReader.decodeOnceFromVideoDevice(undefined,'video');
+document.getElementById('query').value=r.text;document.getElementById('type').value='set';
+setMode('text');document.querySelector('.tab').click();fetchPrices();codeReader.reset();
+}catch(e){alert('Camera error: '+e);}
+}
+function handleUpload(e){
+const f=e.target.files[0];if(!f)return;
+const r=new FileReader();r.onload=e=>{document.getElementById('preview').src=e.target.result;
+document.getElementById('preview').style.display='block';document.getElementById('analyzeBtn').style.display='block';};
+r.readAsDataURL(f);
+}
+async function analyzeImage(){
+const f=document.getElementById('imageInput').files[0];if(!f)return;
+const fd=new FormData();fd.append('image',f);
+document.getElementById('analyzeBtn').textContent='Analyzing...';
+try{const res=await fetch(${API_URL}/api/identify,{method:'POST',body:fd});const d=await res.json(); document.getElementById('query').value=d.id;document.getElementById('type').value=d.type; setMode('text');document.querySelector('.tab').click();fetchPrices(); }catch(e){alert('Error: '+e.message);} document.getElementById('analyzeBtn').textContent='Identify LEGO'; } async function fetchPrices(){ const q=document.getElementById('query').value,t=document.getElementById('type').value; if(!q)return;try{const res=await fetch(``${API_URL}/api/price?query=${q}&type=${t});const d=await res.json();
+document.getElementById('results').innerHTML=<div class="card"&gt;&lt;h2&gt;${d.name}</h2><p>ID: ${d.query} | Type: ${d.type}</p></div><div class="card"><canvas id="chart"></canvas></div>; new Chart(document.getElementById('chart'),{type:'bar',data:{labels:d.sites.filter(s=&gt;s.avg_sold).map(s=>``${s.site} ${s.condition}),datasets:[{data:d.sites.filter(s=>s.avg_sold).map(s=>s.avg_sold),backgroundColor:'#ffd500'}]},options:{plugins:{legend:{display:false}}}});
+}catch(e){alert('Error: '+e.message);}
+}
+</script>
+</body>
+</html>
